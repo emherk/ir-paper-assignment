@@ -1,11 +1,14 @@
+import os
+os.environ['JAVA_HOME'] = 'C:\\Program Files\\Java\\jdk-14.0.2'
+os.environ['PYTHONUTF8'] = '1'
 from pathlib import Path
 from typing import Callable, Optional
 
 import pandas as pd
 import pyterrier as pt
 
-
 DATASET = pt.datasets.get_dataset("irds:antique/test/non-offensive")
+# %%
 INDEX = pt.index.IterDictIndexer(
     str(Path.cwd()),
     meta={
@@ -14,6 +17,7 @@ INDEX = pt.index.IterDictIndexer(
     },
     type=pt.index.IndexingType.MEMORY,
 ).index(DATASET.get_corpus_iter())
+# %%
 BM25 = pt.BatchRetrieve(
     INDEX,
     wmodel="BM25",
@@ -21,6 +25,7 @@ BM25 = pt.BatchRetrieve(
     properties={"termpipelines": ""},
     controls={"qe": "off"},
 )
+# %%
 
 
 def search(query: str) -> pd.DataFrame:
@@ -28,7 +33,7 @@ def search(query: str) -> pd.DataFrame:
 
 
 def evaluate(
-    df: pd.DataFrame, rewrite_func: Optional[Callable[[str], str]] = None
+        df: pd.DataFrame, rewrite_func: Optional[Callable[[str], str]] = None
 ) -> float:
     if rewrite_func is None:
         pl = BM25
