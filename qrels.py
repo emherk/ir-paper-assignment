@@ -27,5 +27,4 @@ if __name__ == "__main__":
 
     res = get_topic_qrels(topics, args.qrels_dir)
 
-    from pprint import pprint
     print(res)
