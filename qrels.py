@@ -14,11 +14,15 @@ def get_topic_qrels(topics: pd.DataFrame, qrel_dir: str) -> pd.DataFrame:
 
     return relevant_qrels
 
+# NOTE: Sample usage:
+# python qrels.py --qrels-dir 'qrels-35topics.txt' --topics-dir 'misinfo-2021-topics.xml' --res-dir 'filtered_qrels.txt' --n 50
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Get relevant (useful and with judged supportiveness) qrels for first n topics')
 
     parser.add_argument('--qrels-dir', type=str, required=True, help='Location of the qrels file')
     parser.add_argument('--topics-dir', type=str, required=True, help='Location of the topics file')
+    parser.add_argument('--res-dir', type=str, required=False, help='Location of the result (optional)')
     parser.add_argument('--n', type=int, required=True, help='Number of topics of each type to return')
 
     args = parser.parse_args()
@@ -26,5 +30,8 @@ if __name__ == "__main__":
     topics = get_both(args.n, args.topics_dir)
 
     res = get_topic_qrels(topics, args.qrels_dir)
+
+    if args.res_dir:
+        res.to_csv(args.res_dir, header=None, index=None, sep=' ', mode='a')
 
     print(res)
