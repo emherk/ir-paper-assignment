@@ -36,11 +36,14 @@ python docnos.py --path <path-to-c4-repo> --pattern 000[01]?
     #             o.write(new_line.encode('utf-8'))
 
 import argparse
-from itertools import islice
 import gzip
 import os
 import subprocess
+from itertools import islice
+import time
+import numpy as np
 from topics import get_both
+from tqdm import tqdm
 from qrels import get_topic_qrels
 
 
@@ -58,6 +61,7 @@ parser.add_argument('--c4-dir', type=str, required=True, help='Root of C4 git re
 parser.add_argument('--topics-dir', type=str, required=True, help='Location of the topics file')
 parser.add_argument('--qrels-dir', type=str, required=True, help='Location of the qrels file')
 parser.add_argument('--n', type=int, required=True, help='Number of topics of each type to get')
+parser.add_argument('--verbose', action='store_true', help='Prints command line excecution info')
 args = parser.parse_args()
 
 topics = get_both(5, args.topics_dir)
@@ -71,16 +75,19 @@ cwd = os.getcwd()
 datapath = os.path.join(cwd, 'data')
 os.chdir(args.c4_dir)
 
-for fileno in qrels['fileno'].unique():
+for fileno in tqdm(np.sort(qrels['fileno'].unique()), desc='Document download progress: ', unit='file'):
     filepath = f'en.noclean/c4-train.{fileno}-of-07168.json.gz'
 
     res = subprocess.run(['git', 'lfs', 'pull', '--include', filepath], check=True, capture_output=True, text=True)
-    print(res)
+    if args.verbose:
+        print(res)
 
     with gzip.open(filepath) as f:
         file_number = filepath[-22:-22 + 5]
         file_name = filepath[-31:]
-        print(f"adding docnos to file number {file_number} ...")
+        if args.verbose:
+            print(f"adding docnos to file number {file_number} ...")
+        
         with gzip.open(os.path.join(datapath, file_name), 'wb') as o:
             for line_number in qrels[qrels['fileno'] == fileno]['lineno'].values:
                 line = next(islice(f, line_number, line_number+1), None).decode('utf-8')
