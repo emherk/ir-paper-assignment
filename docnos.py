@@ -42,7 +42,7 @@ import subprocess
 from itertools import islice
 import time
 import numpy as np
-from topics import get_both
+from topics import get_both_with_qrels
 from tqdm import tqdm
 from qrels import get_topic_qrels
 
@@ -64,7 +64,7 @@ parser.add_argument('--n', type=int, required=True, help='Number of topics of ea
 parser.add_argument('--verbose', action='store_true', help='Prints command line excecution info')
 args = parser.parse_args()
 
-topics = get_both(5, args.topics_dir)
+topics = get_both_with_qrels(5, args.topics_dir, args.qrels_dir)
 qrels = get_topic_qrels(topics, args.qrels_dir)
 
 qrels['fileno'] = qrels['docno'].map(parse_file_number)
