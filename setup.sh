@@ -7,6 +7,10 @@ rm -rf c4
 echo "Cloning c4 repository..."
 GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/datasets/allenai/c4
 
+# Install project dependencies
+echo "Installing dependencies"
+pip install -r requirements.txt
+
 # Download the TREC Health misinformation 2021 topics and qrels
 echo "Cleaning up topics and qrels..."
 rm -rf eval
