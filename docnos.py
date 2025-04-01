@@ -38,6 +38,7 @@ python docnos.py --path <path-to-c4-repo> --pattern 000[01]?
 import argparse
 import gzip
 import os
+import random
 import subprocess
 from itertools import islice
 import time
@@ -64,7 +65,7 @@ parser.add_argument('--n', type=int, required=True, help='Number of topics of ea
 parser.add_argument('--verbose', action='store_true', help='Prints command line excecution info')
 args = parser.parse_args()
 
-topics = get_both_with_qrels(5, args.topics_dir, args.qrels_dir)
+topics = get_both_with_qrels(args.n, args.topics_dir, args.qrels_dir)
 qrels = get_topic_qrels(topics, args.qrels_dir)
 
 qrels['fileno'] = qrels['docno'].map(parse_file_number)
@@ -74,6 +75,7 @@ os.makedirs('data', exist_ok=True)
 cwd = os.getcwd()
 datapath = os.path.join(cwd, 'data')
 os.chdir(args.c4_dir)
+random.seed(42)
 
 for fileno in tqdm(np.sort(qrels['fileno'].unique()), desc='Document download progress: ', unit='file'):
     filepath = f'en.noclean/c4-train.{fileno}-of-07168.json.gz'
@@ -87,13 +89,19 @@ for fileno in tqdm(np.sort(qrels['fileno'].unique()), desc='Document download pr
         file_name = filepath[-31:]
         if args.verbose:
             print(f"adding docnos to file number {file_number} ...")
-        
+
+        # Subsample docs with qrels
+        relevant_docs = qrels[qrels['fileno'] == fileno]['lineno'].values
+        other_docs = [n for n in range(relevant_docs.max()) if n not in relevant_docs]
+        # Additionaly subsample 10 random docs for each document with qrels
+        required_docs = np.concat((relevant_docs, random.sample(other_docs, len(relevant_docs)*10)))
+
         with gzip.open(os.path.join(datapath, file_name), 'wb') as o:
-            for line_number in qrels[qrels['fileno'] == fileno]['lineno'].values:
+            for line_number in required_docs:
+                f.seek(0)
                 line = next(islice(f, line_number, line_number+1), None).decode('utf-8')
                 new_line = f"{{\"docno\":\"{new_docno(file_number, line_number)}\",{line[1:]}"
                 o.write(new_line.encode('utf-8'))
-                f.seek(0)
 
     subprocess.run(['rm', '-rf', filepath])
     subprocess.run(['rm', '-rf', './.git/lfs/objects'])

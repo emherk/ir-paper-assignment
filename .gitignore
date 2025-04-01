@@ -180,7 +180,7 @@ cython_debug/
 
 # ignore data files, download separately
 data/
-data.zip
+data?(*).zip
 
 # ignore downloaded dataset
 c4/
