@@ -26,7 +26,8 @@ def index_documents(data_dir: str) -> None:
     indexer = pt.IterDictIndexer(
         str(index_path),
         meta={
-            'docno': 42
+            'docno': 100, #42
+            'text': 32768 #4096 
         }
     )
     index_ref = indexer.index(document_iterator())
