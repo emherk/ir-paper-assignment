@@ -4,7 +4,7 @@ from ir_measures import define_byquery
 from labels import QREL_LABELS
 from pathlib import Path
 from qrels import get_topic_qrels
-from topics import get_both
+from topics import get_both_with_qrels
 from pyterrier_t5 import MonoT5ReRanker
 from transformers import AutoTokenizer, AutoModel
 from sentence_transformers import CrossEncoder,SentenceTransformer
@@ -19,11 +19,13 @@ QRELS_DIR = Path('eval/misinfo-resources-2021/qrels/qrels-35topics.txt').resolve
 # https://dl.acm.org/doi/abs/10.1145/3392854
 def serp_ms(qrels: pd.DataFrame, run: pd.DataFrame) -> float:
     n = len(run)
+    run['final_rank'] = run.reset_index(drop=True).index
     denominator = (n * (n+1)) / 2.0
     
     qrels_indexed = qrels.set_index('doc_id')
-    nominator = run.apply(lambda row: serp_ms_x(row, qrels_indexed) * (n - row['rank']), axis=1).sum()
+    nominator = run.apply(lambda row: serp_ms_x(row, qrels_indexed) * (n - row['final_rank']), axis=1).sum()
 
+    run.drop(columns=['final_rank'])
     return nominator / denominator
 
 def serp_ms_x(ranking: pd.Series, qrels_doc_id_indexed: pd.DataFrame):
@@ -40,7 +42,7 @@ def serp_ms_x(ranking: pd.Series, qrels_doc_id_indexed: pd.DataFrame):
 def calculate_qrel_label(qrel: pd.Series, topics: pd.DataFrame) -> int:
     return QREL_LABELS[topics.loc[qrel['qid']]['stance']][qrel['usefulness']][qrel['supportiveness']][qrel['credibility']]
 
-topics = get_both(5, TOPICS_DIR)
+topics = get_both_with_qrels(5, TOPICS_DIR, QRELS_DIR)
 qrels = get_topic_qrels(topics, QRELS_DIR)
 
 topics_pt = topics[['number', 'query', 'stance']].rename(columns={'number': 'qid'}).set_index('qid')
@@ -144,10 +146,10 @@ bm25_bert = (
 #[tfidf, bm25, bert, monot5, bm25_monot5, bm25_bert ],
 #["TF-IDF", "BM25","BERT", "MonoT5","BM25+MonoT5","BM25+BERT"],
 res = pt.Experiment(
-    [tfidf, bm25, bert],
+    [tfidf, bm25, bert, monot5, bm25_monot5, bm25_bert ],
     topics_pt,
     qrels_pt,
-    names=["TF-IDF", "BM25","BERT"],
+    names=["TF-IDF", "BM25","BERT", "MonoT5","BM25+MonoT5","BM25+BERT"],
     eval_metrics=[pt.measures.nDCG @ 10, pt.measures.RR @ 10, pt.measures.MAP, SERP_MS@10],
 )
 
