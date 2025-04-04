@@ -108,7 +108,7 @@ If you'd like to contribute:
 <table>
   <tr>
 <!-- TODO: Add Yifan's github stuff -->
-    <td align="center"><a href="https://github.com/username"><img src="https://avatars.githubusercontent.com/username?v=4" width="100px;" alt=""/><br /><sub><b>Yifan Sun</b></sub></a></td>
+    <td align="center"><a href="https://github.com/sun12fff4n"><img src="https://avatars.githubusercontent.com/sun12fff4n?v=4" width="100px;" alt=""/><br /><sub><b>Yifan Sun</b></sub></a></td>
     <td align="center"><a href="https://github.com/emherk"><img src="https://avatars.githubusercontent.com/emherk?v=4" width="100px;" alt=""/><br /><sub><b>Kristóf Sándor</b></sub></a></td>
     <td align="center"><a href="https://github.com/AdoBag"><img src="https://avatars.githubusercontent.com/AdoBag?v=4" width="100px;" alt=""/><br /><sub><b>Adomas Bagdonas</b></sub></a></td>
     <td align="center"><a href="https://github.com/zygis009"><img src="https://avatars.githubusercontent.com/zygis009?v=4" width="100px;" alt=""/><br /><sub><b>Žygimantas Liutkus</b></sub></a></td>

@@ -180,7 +180,7 @@ cython_debug/
 
 # ignore data files, download separately
 data/
-data?(*).zip
+data*.zip
 
 # ignore downloaded dataset
 c4/
@@ -190,3 +190,6 @@ eval/
 
 # ignore document indexes
 index/
+
+# ignore results (csv files)
+*results*.csv
