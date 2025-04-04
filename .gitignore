@@ -190,3 +190,6 @@ eval/
 
 # ignore document indexes
 index/
+
+# ignore output from a data analysis script
+misinfo_labels_per_qid.json
