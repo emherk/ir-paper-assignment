@@ -7,8 +7,8 @@ from topics import get_both_with_qrels
 from qrels import get_topic_qrels
 from labels import QREL_LABELS
 
-TOPICS_DIR = Path('../misinfo-2021/topics/misinfo-2021-topics.xml').resolve()
-QRELS_DIR = Path('../misinfo-2021/qrels/qrels-35topics.txt').resolve()
+TOPICS_DIR = Path('eval/misinfo-resources-2021/topics/misinfo-2021-topics.xml').resolve()
+QRELS_DIR = Path('eval/misinfo-resources-2021/qrels/qrels-35topics.txt').resolve()
 
 topics = get_both_with_qrels(5, TOPICS_DIR, QRELS_DIR)
 qrels = get_topic_qrels(topics, QRELS_DIR)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     misinfo_labels_per_qid = qrels_misinfo_scores(qrels_pt, topics_indexed)
 
     with open('misinfo_labels_per_qid.json', 'w') as f:
-        json.dump(misinfo_labels_per_qid, f)
+        json.dump(misinfo_labels_per_qid, f, indent=2)
 
     total_misinfo = sum(d['misinfo'] for d in misinfo_labels_per_qid.values())
     total_debunks = sum(d['debunks'] for d in misinfo_labels_per_qid.values())
