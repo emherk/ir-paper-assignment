@@ -55,6 +55,7 @@ topics_pt['qid'] = topics_pt['qid'].astype(str)
 
 SERP_MS = define_byquery(serp_ms, name='SERP-MS')
 
+# Base ranking models
 bm25 = pt.terrier.Retriever(
     str(IDX_DIR),
     wmodel="BM25",
@@ -71,27 +72,12 @@ tfidf = pt.terrier.Retriever(
 #https://arxiv.org/pdf/2101.05667
 monot5_rerank = MonoT5ReRanker("castorini/monot5-base-msmarco", batch_size=8)
 
-
-#tfidf + MonoT5
-monot5 = (
-    tfidf >>
-    pt.text.get_text(str(IDX_DIR)) >>
-    pt.apply.generic(lambda df: df.rename(columns={"body": "text"})) >>
-    monot5_rerank
-)
-
-#MonoT5 + BM25
+#BM25 + MonoT5
 bm25_monot5 = (
     bm25 >>
     pt.text.get_text(str(IDX_DIR)) >>
-    pt.apply.generic(lambda df: df.rename(columns={"body": "text"})) >>
     monot5_rerank
 )
-
-
-
-
-
 
 
 #Bert (Using bert-like model ms-marco-MiniLM-L-6-v2)
@@ -102,25 +88,11 @@ def rerank(alpha:float):
         df = df.copy()
         df["retriever_score"] = df["score"]  
         query_doc_pairs = list(zip(df["query"], df["text"]))
-        ce_scores = ce_model.predict(query_doc_pairs)
-        #normalize scores to range from -1 to 1, otherwise the scores will out of range -1 to 1, makes serp-ms not work correctly.
-        def normalize_to_range(scores, min_val=-1, max_val=1):
-            min_score = np.min(scores)
-            max_score = np.max(scores)
-            if min_score == max_score:
-                return np.full_like(scores, (min_val + max_val) / 2)
-            norm_scores = (scores - min_score) / (max_score - min_score)
-            return norm_scores * (max_val - min_val) + min_val
 
-        ce_scores_norm = normalize_to_range(np.array(ce_scores), -1, 1)
-        df["bert_score"] = ce_scores_norm
-
+        df["bert_score"] = ce_model.predict(query_doc_pairs)
         df["score"] = alpha * df["retriever_score"] + (1 - alpha) * df["bert_score"]
-        print("bert_score:", df["bert_score"].min(), df["bert_score"].max())
-        print("final score:", df["score"].min(), df["score"].max())
         return df
     return crossencoder_rerank
-
 
 #Bert only (simulate as bert only)  
 bert_pipeline = pt.apply.generic(rerank(alpha=0))
@@ -131,28 +103,55 @@ bert = (
     >> bert_pipeline
 )
 
-
-#Bert + BM25, with weight alpha
-bm25_bert_pipeline = pt.apply.generic(rerank(alpha=0.5))
-bm25_bert = (
+#Bert + BM25, with alpha = 0.3
+bm25_bert_03_pipeline = pt.apply.generic(rerank(alpha=0.3))
+bm25_bert_03 = (
     bm25
     >> pt.text.get_text(str(IDX_DIR))               
     >> pt.apply.generic(lambda df: df.rename(columns={"body": "text"}))
-    >> bm25_bert_pipeline
+    >> bm25_bert_03_pipeline
+)
+
+#Bert + BM25, with alpha = 0.5
+bm25_bert_05_pipeline = pt.apply.generic(rerank(alpha=0.5))
+bm25_bert_05 = (
+    bm25
+    >> pt.text.get_text(str(IDX_DIR))               
+    >> pt.apply.generic(lambda df: df.rename(columns={"body": "text"}))
+    >> bm25_bert_05_pipeline
+)
+
+#Bert + BM25, with alpha = 0.7
+bm25_bert_07_pipeline = pt.apply.generic(rerank(alpha=0.7))
+bm25_bert_07 = (
+    bm25
+    >> pt.text.get_text(str(IDX_DIR))               
+    >> pt.apply.generic(lambda df: df.rename(columns={"body": "text"}))
+    >> bm25_bert_07_pipeline
 )
 
 
-
-#[tfidf, bm25, bert, monot5, bm25_monot5, bm25_bert ],
-#["TF-IDF", "BM25","BERT", "MonoT5","BM25+MonoT5","BM25+BERT"],
+# Experiments and result saving
 res = pt.Experiment(
-    [tfidf, bm25, bert, monot5, bm25_monot5, bm25_bert ],
+    [tfidf, bm25, bert, bm25_bert_03, bm25_bert_05, bm25_bert_07, bm25_monot5],
     topics_pt,
     qrels_pt,
-    names=["TF-IDF", "BM25","BERT", "MonoT5","BM25+MonoT5","BM25+BERT"],
-    eval_metrics=[pt.measures.nDCG @ 10, pt.measures.RR @ 10, pt.measures.MAP, SERP_MS@10],
+    names=["TF-IDF", "BM25", "BERT(alpha = 0)", "BM25+BERT(alpha = 0.3)", "BM25+BERT(alpha = 0.5)", "BM25+BERT(alpha = 0.7)", "BM25+MonoT5"],
+    eval_metrics=[pt.measures.nDCG @ 10, SERP_MS@10],
+    baseline=1,
+    correction='bonferroni'
 )
 
-print(res)
-res.to_csv("experiment_results.csv", index=False)
+res.to_csv('results_with_stat.csv', index=False)
+
+res_perquery = pt.Experiment(
+    [tfidf, bm25, bert, bm25_bert_03, bm25_bert_05, bm25_bert_07, bm25_monot5],
+    topics_pt,
+    qrels_pt,
+    names=["TF-IDF", "BM25", "BERT(alpha = 0)", "BM25+BERT(alpha = 0.3)", "BM25+BERT(alpha = 0.5)", "BM25+BERT(alpha = 0.7)", "BM25+MonoT5"],
+    eval_metrics=[pt.measures.nDCG @ 10, SERP_MS@10],
+    perquery=True
+)
+
+res_perquery.to_csv("results_perquery_with_stat.csv", index=False)
 
