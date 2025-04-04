@@ -190,3 +190,6 @@ eval/
 
 # ignore document indexes
 index/
+
+# ignore results (csv files)
+*results*.csv
