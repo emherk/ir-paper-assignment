@@ -1,62 +1,116 @@
-# DSAIT4050: Information retrieval
+# DSAIT4050: Information retrieval project
 
-This is the repository accompanying the DSAIT4050: Information Retrieval course at TU Delft.
+This repository contains code for running experiments on the [2021 TREC Health Misinformation Track dataset](https://trec-health-misinfo.github.io/2021.html) to compare how different IR methods compare in terms of returning misinformative results.
 
-Here, we publish any hands-on material (i.e., Jupyter notebooks). The notebooks will be released alongside the lecture, so be sure to keep checking this repository every week!
+Here we provide the scripts we used to subsample the dataset (i.e. choosing the topics, getting qrels related to those topics, downloading and the documents), as well as the scripts for running the evaluation experiments with different IR methods.
 
-Did you find a bug or an error in one of the notebooks? We're happy to accept pull requests!
+## Repository structure
 
-What you'll find **here**:
+This is our repository structure. Some folders are not in the repository and are ignored by git, but are created when running the setup bash script. Those folders will be specified as `(ignored)`. Everything within them is also implied to be ignored.
 
-- Project material (scaffolding project, final project)
-- _Introduction to PyTerrier_ series
+```
+├── c4/                      # The c4 repository (ignored)
+│   ├── en.noclean/         # Data variant used in our experiments
+│   └── ...                 # Other repository folders/files
+├── data/                    # Downloaded documents (ignored)
+├── eval/                    # Topics and qrels used for evaluation (ignored)
+│   └── misinfo-resources-2021/  
+|       ├── qrels/          # Qrels folder
+|       ├── topics/         # Topics folder
+|       └── ...             # Other folders/files
+├── index/                   # Downloaded document index location (ignored)
+├── .gitignore              # Files and folders to ignore in Git
+├── topics.py               # Functions for parsing topics
+├── qrels.py                # Functions for parsing qrels
+├── docnos.py               # Script for downloading documents
+├── index.py                # Functions for indexing documents
+├── labels.py               # Only contains a dictionary for mapping qrel labels
+├── main.py                 # Main code for running experiments
+├── README.md               # Project documentation
+├── setup.sh          # Bash script to setup the experiment as we did
+└── requirements.txt        # Required dependencies
+```
 
-What you'll find **[on Brightspace](https://brightspace.tudelft.nl/d2l/home/680954)**:
+## Setup
 
-- Slides
-- Assignments
-- Announcements
-- Any other lecture-related material and discussions
+We recommend runing the bash script to fully setup the repository for the experiments in order to use the exact same data as we did in our experiments. In a Linux shell:
 
-## Content
+```
+./setup.sh
+```
 
-| #   | File                                              | Title                    |                                                                                                                                                                                                                     |
-| --- | ------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 00  | `scaffolding/00-task.ipynb`                       | Scaffolding project      |                                                                                                                                                                                                                     |
-| 01  | `intro-pyterrier/01-setup.ipynb`                  | Setup                    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wis-delft/ms-information-retrieval/blob/main/intro-pyterrier/01-setup.ipynb)                  |
-| 02  | `intro-pyterrier/02-indexing-retrieval.ipynb`     | Indexing & retrieval     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wis-delft/ms-information-retrieval/blob/main/intro-pyterrier/02-indexing-retrieval.ipynb)     |
-| 03  | `intro-pyterrier/03-datasets.ipynb`               | Datasets                 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wis-delft/ms-information-retrieval/blob/main/intro-pyterrier/03-datasets.ipynb)               |
-| 04  | `intro-pyterrier/04-evaluation-experiments.ipynb` | Evaluation & experiments | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wis-delft/ms-information-retrieval/blob/main/intro-pyterrier/04-evaluation-experiments.ipynb) |
-| 05  | `intro-pyterrier/05-transformers.ipynb`           | Transformers             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wis-delft/ms-information-retrieval/blob/main/intro-pyterrier/05-transformers.ipynb)           |
-| 06  | `intro-pyterrier/06-learning_to_rank.ipynb`       | Learning to rank         | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wis-delft/ms-information-retrieval/blob/main/intro-pyterrier/06-learning_to_rank.ipynb)       |
-| 07  | `intro-pyterrier/07-neural_models.ipynb`          | Neural ranking models    | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wis-delft/ms-information-retrieval/blob/main/intro-pyterrier/07-neural_models.ipynb)          |
+On Windows the script can be executed in a Git Bash shell.
 
-## How to run the notebooks
+Optionally, the setup can also be customized. Currently the script downloads all documents that have qrels for the first 5 topics (that have at least one qrel) with both a *helpful* and *unhelpful* stances. The number of topics for which you wish to download documents can be adjusted.
 
-We recommend running the notebooks **locally**. You'll need up-to-date versions of
+The experiments can also be setup manually, by:
 
-- [Python](https://www.python.org/downloads/),
-- [JDK](https://www.oracle.com/java/technologies/downloads/),
-- a notebook viewer, such as [JupyterLab](https://jupyter.org/) or [Visual Studio Code](https://code.visualstudio.com/).
+1. Installing dependencies:
 
-Alternatively, you can use **[Google Colab](https://colab.research.google.com/)** to run the notebooks in the cloud. However, this requires a Google account. **Note that Colab environments are not persistent, i.e., you'll have to download files you don't want to lose.**
+```
+pip install -r requirements.txt
+```
 
-## Troubleshooting
+2. Cloning the c4 repository (make sure git-lfs is installed on your system):
 
-We'll collect common issues and respective solutions here.
+```
+GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/datasets/allenai/c4
+```
 
-### UnicodeDecodeError: 'charmap' codec can't decode [...]
+3. Downloading and extracting the topics and qrels:
 
-This is an issue of `ir_datasets` which seems to happen on Windows only. [There is a fix already](https://github.com/allenai/ir_datasets/issues/208), but it hasn't been merged. A possible workaround is to set Python to use UTF-8 by default.
+```
+curl --progress-bar -L https://trec.nist.gov/data/misinfo/misinfo-resources-2021.tar.gz -o <path-to-eval-dir>/misinfo-resources-2021.tar.gz
+```
 
-TL;DR: Set the environment variable `PYTHONUTF8=1`.
+```
+tar -xzf <path-to-eval-dir>/misinfo-resources-2021.tar.gz -C <path-to-eval-dir>
+```
 
-#### Step-by-step guide
+4. Downloading the documents:
 
-1. [Open the environment variable settings](img/pythonutf8_1.png).
-2. [Create a new user environment variable](img/pythonutf8_2.png).
-3. [Use `PYTHONUTF8` as variable name and `1` as value](img/pythonutf8_3.png).
+```
+python docnos.py --c4-dir <path-to-c4-repo> --topics-dir <path-to-topics-xml> --qrels-dir <path-to-qrels-file> --n <number-of-topics-to-consider>
+```
 
-**You have to restart Python (i.e., the notebook server) after this.**
+5. Indexing the documents:
 
-Note that this setting may have unexpected effects on other Python scripts, so it's best to revert this after you're done with the notebooks.
+```
+python index.py --data-dir <path-to-documents-folder>
+```
+
+## Performing experiments
+
+To perform the experiments, simply run the main code file:
+
+```
+python main.py
+```
+
+The contents of the file can be adjusted to gather different results, e.g. compare other methods, evaluate using different measures.
+
+## Collaboration
+
+While this project was developed primarily for academic purposes, contributions are welcome for further improvements or extensions.
+
+If you'd like to contribute:
+
+1. Fork the repository to your own GitHub account.
+
+2. Create a new branch (feature-branch or bugfix-branch).
+
+3. Make your changes and ensure the code follows best practices.
+
+4. Submit a pull request with a clear description of your changes.
+
+## Contributors
+
+<table>
+  <tr>
+<!-- TODO: Add Yifan's github stuff -->
+    <td align="center"><a href="https://github.com/username"><img src="https://avatars.githubusercontent.com/username?v=4" width="100px;" alt=""/><br /><sub><b>Yifan Sun</b></sub></a></td>
+    <td align="center"><a href="https://github.com/emherk"><img src="https://avatars.githubusercontent.com/emherk?v=4" width="100px;" alt=""/><br /><sub><b>Kristóf Sándor</b></sub></a></td>
+    <td align="center"><a href="https://github.com/AdoBag"><img src="https://avatars.githubusercontent.com/AdoBag?v=4" width="100px;" alt=""/><br /><sub><b>Adomas Bagdonas</b></sub></a></td>
+    <td align="center"><a href="https://github.com/zygis009"><img src="https://avatars.githubusercontent.com/zygis009?v=4" width="100px;" alt=""/><br /><sub><b>Žygimantas Liutkus</b></sub></a></td>
+  </tr>
+</table>

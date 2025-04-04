@@ -180,3 +180,13 @@ cython_debug/
 
 # ignore data files, download separately
 data/
+data?(*).zip
+
+# ignore downloaded dataset
+c4/
+
+# ignore downloaded topics/qrels
+eval/
+
+# ignore document indexes
+index/
