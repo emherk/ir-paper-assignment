@@ -37,7 +37,7 @@ def serp_ms_x(ranking: pd.Series, qrels_doc_id_indexed: pd.DataFrame):
     supportiveness = qrels_doc_id_indexed.loc[ranking['doc_id']]['supportiveness']
 
     # Return misinformation score based on supportiveness and topic stance
-    return (supportiveness - 1) if ranking['stance'] == 'helpful' else (1 - supportiveness)
+    return (supportiveness - 1) if ranking['stance'] != 'helpful' else (1 - supportiveness)
 
 def calculate_qrel_label(qrel: pd.Series, topics: pd.DataFrame) -> int:
     return QREL_LABELS[topics.loc[qrel['qid']]['stance']][qrel['usefulness']][qrel['supportiveness']][qrel['credibility']]
@@ -139,7 +139,8 @@ res = pt.Experiment(
     names=["TF-IDF", "BM25", "BERT(alpha = 0)", "BM25+BERT(alpha = 0.3)", "BM25+BERT(alpha = 0.5)", "BM25+BERT(alpha = 0.7)", "BM25+MonoT5"],
     eval_metrics=[pt.measures.nDCG @ 10, SERP_MS@10],
     baseline=1,
-    correction='bonferroni'
+    correction='bonferroni',
+    test='wilcoxon'
 )
 
 res.to_csv('results_with_stat.csv', index=False)
